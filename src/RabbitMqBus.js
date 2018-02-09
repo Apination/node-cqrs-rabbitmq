@@ -225,8 +225,12 @@ module.exports = class RabbitMqBus {
 
 		this[_queueName] = options.queue || options.queuePrefix && (options.queuePrefix + uuid.v4().replace(/-/g, '')) || undefined;
 
-		const deadLetterExchange = options.deadLetterExchange === false ? undefined
-			: this.queueName ? this.queueName + '.failed' : undefined;
+		const deadLetterExchange = options.deadLetterExchange === false
+			// using "undefined" because RabbitMq requires it instead of false
+			? undefined
+			: this.queueName
+				? this.queueName + '.failed'
+				: undefined;
 
 		this[_queueOptions] = {
 			// will survive broker restarts
