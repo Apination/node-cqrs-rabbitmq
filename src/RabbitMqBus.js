@@ -224,14 +224,21 @@ module.exports = class RabbitMqBus {
 		this._handle = this._handle.bind(this);
 
 		this[_queueName] = options.queue || options.queuePrefix && (options.queuePrefix + uuid.v4().replace(/-/g, '')) || undefined;
+
+		if (typeof options.deadLetterExchange === 'undefined' || options.deadLetterExchange) {
+			options.deadLetterExchange = this.queueName ? this.queueName + '.failed' : undefined;
+		}
+
 		this[_queueOptions] = {
 			// will survive broker restarts
 			durable: 'durable' in options ? options.durable : !!options.queue,
 			// scoped to connection
 			exclusive: !options.queue,
 			// an exchange to which messages discarded from the queue will be resent
-			deadLetterExchange: this.queueName ? this.queueName + '.failed' : undefined
+			deadLetterExchange: options.deadLetterExchange
 		};
+
+		console.log(this[_queueOptions]);
 
 		this[_subChannelPrefetch] = options.prefetch || undefined;
 
