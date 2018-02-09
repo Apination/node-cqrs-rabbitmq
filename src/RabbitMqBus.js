@@ -225,9 +225,8 @@ module.exports = class RabbitMqBus {
 
 		this[_queueName] = options.queue || options.queuePrefix && (options.queuePrefix + uuid.v4().replace(/-/g, '')) || undefined;
 
-		if (typeof options.deadLetterExchange === 'undefined' || options.deadLetterExchange) {
-			options.deadLetterExchange = this.queueName ? this.queueName + '.failed' : undefined;
-		}
+		const deadLetterExchange = options.deadLetterExchange === false ? undefined
+			: this.queueName ? this.queueName + '.failed' : undefined;
 
 		this[_queueOptions] = {
 			// will survive broker restarts
@@ -235,7 +234,7 @@ module.exports = class RabbitMqBus {
 			// scoped to connection
 			exclusive: !options.queue,
 			// an exchange to which messages discarded from the queue will be resent
-			deadLetterExchange: options.deadLetterExchange
+			deadLetterExchange
 		};
 
 		console.log(this[_queueOptions]);
