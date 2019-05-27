@@ -341,6 +341,8 @@ module.exports = class RabbitMqBus {
 			return;
 		}
 
+		const requeue = message.__requeue || false
+
 		this._logger.debug(`'${msgId}' received, passing to ${handlers.length === 1 ? '1 handler' : handlers.length + ' handlers'}...`);
 
 		return decodePayload(message.content, message.properties.contentType)
@@ -352,7 +354,11 @@ module.exports = class RabbitMqBus {
 				this._logger.info(`'${msgId}' processing failed, will be rejected: ${err && err.message || err || 'No reason specified'}`);
 				this._logger.info(err);
 				// second argument indicates whether the message will be re-routed to another channel
-				return this[_subChannelPromise].then(channel => channel.reject(message, false));
+
+				if (requeue) {
+					console.log('Requeuing message', JSON.stringify(message))
+				}
+				return this[_subChannelPromise].then(channel => channel.reject(message, requeue));
 			})
 			.catch(this._logger.info);
 	}
