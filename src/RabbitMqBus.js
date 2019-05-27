@@ -342,6 +342,7 @@ module.exports = class RabbitMqBus {
 		}
 
 		const requeue = message.__requeue || false
+		message.__requeue = undefined
 
 		this._logger.debug(`'${msgId}' received, passing to ${handlers.length === 1 ? '1 handler' : handlers.length + ' handlers'}...`);
 
