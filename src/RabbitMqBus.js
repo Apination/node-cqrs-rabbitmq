@@ -4,6 +4,7 @@ const amqp = require('amqplib');
 const uuid = require('uuid');
 const createLogger = require('debug');
 const reconnect = require('./reconnect');
+const debugPrefetch = require('debug')('prefetch');
 
 // http://www.squaremobius.net/amqp.node/channel_api.html#channel_publish
 const DEFAULT_ROUTE = '';
@@ -22,11 +23,6 @@ const _handlers = Symbol('consumers');
 const _queueOptions = Symbol('options');
 
 let messagesBeingProcessedInParallel = 0
-
-setInterval(function () {
-	console.log('Parallel amqp messages being processed', messagesBeingProcessedInParallel)
-}, 1000)
-
 
 /**
  * Creates human-readable message descriptor for debug messages
@@ -356,10 +352,12 @@ module.exports = class RabbitMqBus {
 		return decodePayload(message.content, message.properties.contentType)
 			.then(payload => Promise.all(handlers.map(h => h(payload))))
 			.then(results => {
+				debugPrefetch('messagesBeingProcessedInParallel', messagesBeingProcessedInParallel)
 				messagesBeingProcessedInParallel--
 				this._logger.debug(`'${msgId}' processed, will be acknowledged`);
 				return this[_subChannelPromise].then(channel => channel.ack(message));
 			}, err => {
+				debugPrefetch('messagesBeingProcessedInParallel', messagesBeingProcessedInParallel)
 				messagesBeingProcessedInParallel--
 				this._logger.info(`'${msgId}' processing failed, will be rejected: ${err && err.message || err || 'No reason specified'}`);
 				this._logger.info(err);
