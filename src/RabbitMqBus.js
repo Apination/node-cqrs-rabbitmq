@@ -245,6 +245,8 @@ module.exports = class RabbitMqBus {
 
 		this[_subChannelPrefetch] = options.prefetch || undefined;
 
+		console.log('Prefetch value', this[_subChannelPrefetch])
+
 		this._createConnection(options.connectionString);
 		this._createPubChannel();
 		this._createSubChannel();
