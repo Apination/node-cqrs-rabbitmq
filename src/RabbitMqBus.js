@@ -4,6 +4,7 @@ const amqp = require('amqplib');
 const uuid = require('uuid');
 const createLogger = require('debug');
 const reconnect = require('./reconnect');
+const debugPrefetch = require('debug')('prefetch');
 
 // http://www.squaremobius.net/amqp.node/channel_api.html#channel_publish
 const DEFAULT_ROUTE = '';
@@ -21,6 +22,7 @@ const _queueName = Symbol('queue');
 const _handlers = Symbol('consumers');
 const _queueOptions = Symbol('options');
 
+let messagesBeingProcessedInParallel = 0
 
 /**
  * Creates human-readable message descriptor for debug messages
@@ -245,6 +247,8 @@ module.exports = class RabbitMqBus {
 
 		this[_subChannelPrefetch] = options.prefetch || undefined;
 
+		console.log('Prefetch value', this[_subChannelPrefetch])
+
 		this._createConnection(options.connectionString);
 		this._createPubChannel();
 		this._createSubChannel();
@@ -334,6 +338,8 @@ module.exports = class RabbitMqBus {
 	_handle(message) {
 		if (!message) return;
 
+		messagesBeingProcessedInParallel++
+
 		const msgId = descriptor(message);
 		const handlers = this[_handlers][message.properties.type];
 		if (!handlers || handlers.length === 0) {
@@ -346,9 +352,13 @@ module.exports = class RabbitMqBus {
 		return decodePayload(message.content, message.properties.contentType)
 			.then(payload => Promise.all(handlers.map(h => h(payload))))
 			.then(results => {
+				debugPrefetch('messagesBeingProcessedInParallel', messagesBeingProcessedInParallel)
+				messagesBeingProcessedInParallel--
 				this._logger.debug(`'${msgId}' processed, will be acknowledged`);
 				return this[_subChannelPromise].then(channel => channel.ack(message));
 			}, err => {
+				debugPrefetch('messagesBeingProcessedInParallel', messagesBeingProcessedInParallel)
+				messagesBeingProcessedInParallel--
 				this._logger.info(`'${msgId}' processing failed, will be rejected: ${err && err.message || err || 'No reason specified'}`);
 				this._logger.info(err);
 				// second argument indicates whether the message will be re-routed to another channel
