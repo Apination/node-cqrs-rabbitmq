@@ -29,7 +29,7 @@
     "mocha": "^2.3.0"
   },
   "dependencies": {
-    "amqplib": "^0.4.2",
+    "amqplib": "^0.10.9",
     "debug": "^2.2.0",
     "node-cqrs": "github:apination/node-cqrs",
     "uuid": "^2.0.3"
