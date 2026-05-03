@@ -32,6 +32,6 @@
     "amqplib": "^0.10.9",
     "debug": "^2.2.0",
     "node-cqrs": "github:apination/node-cqrs",
-    "uuid": "^2.0.3"
+    "uuid": "^14.0.0"
   }
 }
